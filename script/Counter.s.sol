@@ -5,14 +5,11 @@ import {Script, console} from "forge-std/Script.sol";
 import {BingoBadge} from "./../src/BingoBadge.sol";
 
 contract Bingo is Script {
-    BingoBadge bingoBadge;
-
-    function setUp() public {
-        bingoBadge = new BingoBadge();
-    }
+    function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
+        BingoBadge bingoBadge = new BingoBadge();
         console.log("BingoBadge deployed at:", address(bingoBadge));
         vm.stopBroadcast();
     }

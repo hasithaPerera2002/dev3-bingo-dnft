@@ -45,13 +45,66 @@ contract BingoBadge is ERC721URIStorage, Ownable {
         _;
     }
 
-    constructor() ERC721("Dev3PackBingoBadge", "D3B") Ownable(msg.sender) {}
+    constructor() ERC721("Dev3PackBingoBadge", "D3B") Ownable(msg.sender) {
+        bingoBoards.push();
+        BingoBoard storage newBoard = bingoBoards[bingoBoards.length - 1];
+        // Add 25 default items for the initial board, representing your list
+        newBoard.items.push(BingoItem("Speedrun Ethereum", false));
+        newBoard.items.push(BingoItem("Base Batches", false));
+        newBoard.items.push(
+            BingoItem(
+                "Only Dust profile (can verify through GitHub username)",
+                false
+            )
+        );
+        newBoard.items.push(BingoItem("Cyfrin Solidity 101", false));
+        newBoard.items.push(BingoItem("Celo Proof of Ship", false));
+        newBoard.items.push(BingoItem("Uniswap Hook Incubator", false));
+        newBoard.items.push(BingoItem("Ledger", false));
+        newBoard.items.push(BingoItem("SheFi Scholar", false));
+        newBoard.items.push(BingoItem("Coinbase Wallet", false));
+        newBoard.items.push(BingoItem("Farcaster", false));
+        newBoard.items.push(
+            BingoItem("30 days of building on Solidity", false)
+        );
+        newBoard.items.push(BingoItem("Builder score > 60", false));
+        newBoard.items.push(BingoItem("Be ambassador", false));
+        newBoard.items.push(BingoItem("ETHGlobal", false));
+        newBoard.items.push(BingoItem("Devcon attendee", false));
+        newBoard.items.push(BingoItem("ETHDenver participant", false));
+        newBoard.items.push(
+            BingoItem("Hackathon winner (any ETH event)", false)
+        );
+        newBoard.items.push(BingoItem("Attended an Ethereum meetup", false));
+        newBoard.items.push(
+            BingoItem("Contributed to an Ethereum open source repo", false)
+        );
+        newBoard.items.push(BingoItem("Participated in a DAO vote", false));
+        newBoard.items.push(
+            BingoItem("Deployed a smart contract on mainnet", false)
+        );
+        newBoard.items.push(BingoItem("Used ENS for a transaction", false));
+        newBoard.items.push(BingoItem("Bridged assets between L2s", false));
+        newBoard.items.push(BingoItem("Minted an NFT on Ethereum", false));
+        newBoard.items.push(BingoItem("Used a zk-rollup dApp", false));
+        newBoard
+            .stage1_url = "https://gateway.lighthouse.storage/ipfs/bafkreics6w7c2y5jpdxtddmmvp74yi34h7oca77b7dy6ac5brz622zvwbm";
+        newBoard
+            .stage2_url = "https://gateway.lighthouse.storage/ipfs/bafkreicbvv5mevj7kdxbggco6k3ualnbmbapypbbjvwirdqajrbusc3nie";
+        newBoard
+            .stage3_url = "https://gateway.lighthouse.storage/ipfs/bafkreicbvv5mevj7kdxbggco6k3ualnbmbapypbbjvwirdqajrbusc3nie";
+        newBoard
+            .stage4_url = "https://gateway.lighthouse.storage/ipfs/bafkreiam6e7aa3sopytec3nya6iz7k7bw4gdopisrmvqoboh7z5jqipwb4";
+        newBoard
+            .completed_url = "https://gateway.lighthouse.storage/ipfs/bafkreic533vbcaclsx2g4wgfgzo57c6ianyiczrx3yfsc3of356bz4w3hm";
+    }
 
     function addUser() public {
         if (users[msg.sender].userAddress != address(0)) {
             revert Actions("User already exists");
         }
         users[msg.sender].userAddress = msg.sender;
+        assignBoardToUser(0); // Automatically assign the first board
     }
 
     function addBingoBoard(
@@ -82,13 +135,23 @@ contract BingoBadge is ERC721URIStorage, Ownable {
 
         User storage user = users[msg.sender];
         uint256 id = user.boardCount++;
-
         user.userBoards[id].boardIndex = boardIndex;
         user.userBoards[id].completed = false;
         user.userBoards[id].tokenId = 0;
     }
 
-    function markItemCompleted(uint256 userBoardIndex, uint256 itemIndex) public isMember {
+    function getUserBingoBoard(
+        uint256 boardIndex
+    ) external view isMember returns (bool[25] memory) {
+        User storage user = users[msg.sender];
+        UserBingoBoard memory ub = user.userBoards[boardIndex];
+        return ub.completedItems;
+    }
+
+    function markItemCompleted(
+        uint256 userBoardIndex,
+        uint256 itemIndex
+    ) public isMember {
         User storage user = users[msg.sender];
         UserBingoBoard storage ub = user.userBoards[userBoardIndex];
 
@@ -131,7 +194,9 @@ contract BingoBadge is ERC721URIStorage, Ownable {
         _setTokenURI(ub.tokenId, uri);
     }
 
-    function _countCompletedLines(UserBingoBoard storage ub) internal view returns (uint256) {
+    function _countCompletedLines(
+        UserBingoBoard storage ub
+    ) internal view returns (uint256) {
         uint256 lines = 0;
 
         // Rows
@@ -172,7 +237,9 @@ contract BingoBadge is ERC721URIStorage, Ownable {
         return lines;
     }
 
-    function getUserBoardStatus(uint256 boardIndex) public view isMember returns (bool[25] memory) {
+    function getUserBoardStatus(
+        uint256 boardIndex
+    ) public view isMember returns (bool[25] memory) {
         User storage user = users[msg.sender];
         UserBingoBoard storage ub = user.userBoards[boardIndex];
 
@@ -181,5 +248,22 @@ contract BingoBadge is ERC721URIStorage, Ownable {
             status[i] = ub.completedItems[i];
         }
         return status;
+    }
+
+    function getUserTokenURI(
+        uint256 boardIndex
+    ) public view isMember returns (string memory) {
+        User storage user = users[msg.sender];
+        UserBingoBoard storage ub = user.userBoards[boardIndex];
+
+        require(ub.tokenId != 0, "NFT not minted yet");
+        return tokenURI(ub.tokenId);
+    }
+
+    function getBingoBoard(
+        uint256 boardIndex
+    ) public view returns (BingoBoard memory) {
+        if (boardIndex >= bingoBoards.length) revert Actions("Invalid board");
+        return bingoBoards[boardIndex];
     }
 }
